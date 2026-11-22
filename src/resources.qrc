@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="Main.qml">Main.qml</file>
+        <file alias="BarButton.qml">BarButton.qml</file>
+        <file alias="ChoiceMenu.qml">ChoiceMenu.qml</file>
+        <file alias="Confirm.qml">Confirm.qml</file>
+        <file alias="PageView.qml">PageView.qml</file>
+        <file alias="skill.md">skill.md</file>
+        <file alias="i18n/en.json">i18n/en.json</file>
+        <file alias="i18n/it.json">i18n/it.json</file>
+    </qresource>
+</RCC>

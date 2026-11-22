@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Omascan
+Name[it]=Omascan
+Comment=Scan paper to PDF
+Comment[it]=Scansiona documenti in PDF
+Exec=omascan open
+Icon=omascan
+Terminal=false
+Categories=Graphics;Scanning;Utility;
+Keywords=scan;scanner;sane;pdf;document;
+StartupWMClass=omascan
