@@ -1,0 +1,51 @@
+name: Scanner report
+description: Tell us how Omascan works with your scanner, good or bad.
+title: "Scanner: "
+labels: ["scanner"]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Scanner model
+      placeholder: Brother MFC-J6955DW
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection
+      options:
+        - Network (Wi-Fi or Ethernet)
+        - USB
+    validations:
+      required: true
+  - type: dropdown
+    id: result
+    attributes:
+      label: Does it work?
+      options:
+        - Yes, everything I tried works
+        - Partly (say what fails below)
+        - No, it isn't found
+        - No, it is found but scanning fails
+    validations:
+      required: true
+  - type: checkboxes
+    id: tried
+    attributes:
+      label: What did you try?
+      options:
+        - label: Flatbed
+        - label: Document feeder
+        - label: Duplex feeder
+        - label: Color, gray and black & white
+  - type: textarea
+    id: devices
+    attributes:
+      label: Output of `omascan devices`
+      render: text
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Errors shown, odd pages, what you had to install, Omascan version (`pacman -Q omascan`).

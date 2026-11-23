@@ -28,6 +28,19 @@ Omascan then appears in the app launcher (`Super + Space`).
 
 To install from this checkout instead, run `bin/install`.
 
+## Tested scanners
+
+| Scanner | Connection |
+|---|---|
+| Brother MFC-J6955DW | Network (eSCL) |
+| Canon PIXMA TR4755i | Network (eSCL) |
+| Epson WF-C5710 | Network (eSCL) |
+
+Most scanners that speak eSCL/AirScan should work the same way. If you try
+Omascan with another one, whether it works or not, please
+[report it](https://github.com/alchemy/omascan/issues/new?template=scanner-report.yml)
+so it can join this list.
+
 ## Keys
 
 | Key | Does |
