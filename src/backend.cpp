@@ -30,30 +30,26 @@ Backend::Backend(Scanner *scanner, FilePicker *picker, QObject *parent)
 
     connect(m_scanner, &Scanner::devicesFound, this, [this](const QList<ScanImage::Device> &devices, const QString &error) {
         const QString current = m_deviceIndex >= 0 ? m_devices[m_deviceIndex].id : QString();
+        const QString currentName = m_deviceIndex >= 0 ? m_devices[m_deviceIndex].name : QString();
         m_devices = devices;
         emit devicesChanged();
         emit busyChanged();
         if (!error.isEmpty() && devices.isEmpty())
             setError(error);
 
-        // Stay on the scanner in use; else the one used last time, by id and
-        // then by name, since airscan numbers devices in the order it finds
-        // them; else the first.
-        auto find = [&devices](auto matches) {
-            for (int i = 0; i < devices.size(); ++i)
-                if (matches(devices[i]))
-                    return i;
-            return -1;
-        };
-        const QString savedId = m_store.value("device").toString();
-        const QString savedName = m_store.value("deviceName").toString();
-        int index = find([&](const ScanImage::Device &d) { return !current.isEmpty() && d.id == current; });
+        // Stay on the scanner in use; else the one used last time; else the
+        // first.
+        int index = ScanImage::findDevice(devices, current, currentName);
         if (index < 0)
-            index = find([&](const ScanImage::Device &d) { return d.id == savedId; });
-        if (index < 0)
-            index = find([&](const ScanImage::Device &d) { return d.name == savedName; });
+            index = ScanImage::findDevice(devices, m_store.value("device").toString(), m_store.value("deviceName").toString());
         if (index < 0 && !devices.isEmpty())
             index = 0;
+
+        // A scan waiting on this discovery goes ahead only on its own scanner.
+        if (!m_retryScanner.isEmpty() && (index < 0 || devices[index].name != m_retryScanner)) {
+            setError(tr("%1 is no longer on the network.").arg(m_retryScanner));
+            m_retryScanner.clear();
+        }
         m_deviceIndex = -2; // forces the options to be read again
         setDeviceIndex(index);
     });
@@ -65,6 +61,11 @@ Backend::Backend(Scanner *scanner, FilePicker *picker, QObject *parent)
             setError(tr("Could not read the settings of %1: %2").arg(m_devices[m_deviceIndex].name, error));
         applyOptions(options);
         emit busyChanged();
+        if (!m_retryScanner.isEmpty() && m_devices[m_deviceIndex].name == m_retryScanner) {
+            m_retryScanner.clear();
+            if (error.isEmpty())
+                startScan();
+        }
     });
 
     connect(m_scanner, &Scanner::pageScanned, this, [this](const QString &path) {
@@ -82,8 +83,17 @@ Backend::Backend(Scanner *scanner, FilePicker *picker, QObject *parent)
         m_progress = percent;
         emit progressChanged();
     });
-    connect(m_scanner, &Scanner::scanFinished, this, [this](int, const QString &error, bool) {
+    connect(m_scanner, &Scanner::scanFinished, this, [this](int pages, const QString &error, bool cancelled) {
         emit busyChanged();
+        // An airscan id goes stale when the scanners on the network answer
+        // in another order than when they were found. Find them again, and
+        // scan once more on the same scanner under its new id.
+        if (pages == 0 && !cancelled && !m_retried && m_deviceIndex >= 0 && ScanImage::isOpenFailure(error)) {
+            m_retried = true;
+            m_retryScanner = m_devices[m_deviceIndex].name;
+            discover();
+            return;
+        }
         if (!error.isEmpty())
             setError(error);
     });
@@ -267,6 +277,12 @@ void Backend::discover() {
 }
 
 void Backend::scan() {
+    m_retried = false;
+    m_retryScanner.clear();
+    startScan();
+}
+
+void Backend::startScan() {
     if (!ready())
         return;
     if (!m_session->isValid()) {

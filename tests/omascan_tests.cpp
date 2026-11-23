@@ -129,6 +129,29 @@ QString fakeScanimage(const QString &directory, bool emptyFeeder = false) {
     return script;
 }
 
+// A scanimage whose one scanner airscan numbers anew on every listing, the
+// way a network that answers in another order does: only the id from the
+// latest listing opens. Writing a higher number to "listings" renumbers it.
+QString renumberingScanimage(const QString &directory) {
+    QFile::copy(pngFixture(directory), directory + "/fixture.png");
+    write(directory + "/help.txt", brotherHelp);
+    const QByteArray d = directory.toUtf8();
+    const QString script = directory + "/scanimage";
+    write(script, "#!/bin/sh\n"
+                  "n=$(cat '" + d + "/listings' 2>/dev/null || echo 0)\n"
+                  "case \"$*\" in\n"
+                  "  *'-f '*) echo $((n + 1)) > '" + d + "/listings'; "
+                  "printf '\\nomascan-device|%s\\n' \"airscan:e$n:Fake Scanner|eSCL|Fake Scanner|ip=10.0.0.2\"; exit 0 ;;\n"
+                  "  *' -A'*) cat '" + d + "/help.txt'; exit 0 ;;\n"
+                  "  *\"airscan:e$((n - 1)):Fake Scanner\"*) ;;\n"
+                  "  *) echo \"scanimage: open of device $2 failed: Invalid argument\" >&2; exit 1 ;;\n"
+                  "esac\n"
+                  "for a; do case \"$a\" in --batch=*) pattern=\"${a#--batch=}\" ;; esac; done\n"
+                  "f=$(printf \"$pattern\" 1); cp '" + d + "/fixture.png' \"$f\"; echo \"$f\"\n");
+    QFile::setPermissions(script, QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner);
+    return script;
+}
+
 class FakePicker : public FilePicker {
 public:
     QUrl answer;
@@ -186,6 +209,23 @@ private slots:
         QCOMPARE(devices[0].name, QString("Canon TR4700 series"));
         QCOMPARE(devices[0].address, QString("10.0.0.9"));
         QCOMPARE(devices[1].name, QString("Canon PIXMA TR4700"));
+    }
+
+    void devicesAreFoundAgainUnderNewAirscanNumbers() {
+        const QList<ScanImage::Device> devices{
+            {"airscan:e0:Brother MFC-J6955DW", "Brother MFC-J6955DW", "192.168.2.36"},
+            {"airscan:e1:EPSON WF-C5710", "EPSON WF-C5710", "192.168.2.32"},
+            {"escl:http://192.168.2.40:80", "Canon TR4700", "192.168.2.40"},
+        };
+        QCOMPARE(ScanImage::findDevice(devices, "airscan:e1:EPSON WF-C5710"), 1);
+        QCOMPARE(ScanImage::findDevice(devices, "airscan:e3:EPSON WF-C5710"), 1);
+        QCOMPARE(ScanImage::findDevice(devices, "airscan:e1:Brother MFC-J6955DW"), 0);
+        QCOMPARE(ScanImage::findDevice(devices, "escl:http://192.168.2.41:80", "Canon TR4700"), 2);
+        QCOMPARE(ScanImage::findDevice(devices, "airscan:e1:Gone"), -1);
+        QCOMPARE(ScanImage::findDevice(devices, {}), -1);
+        QVERIFY(ScanImage::isOpenFailure(ScanImage::errorMessage(
+            "scanimage: open of device airscan:e7:EPSON WF-C5710 failed: Invalid argument\n")));
+        QVERIFY(!ScanImage::isOpenFailure("Document feeder out of documents"));
     }
 
     void optionsFromBrother() {
@@ -372,6 +412,22 @@ private slots:
         QTRY_COMPARE(backend.error(), QString("The document feeder is empty."));
         QCOMPARE(backend.pages()->count(), 0);
         QVERIFY(!backend.pages()->canUndo());
+    }
+
+    void backendScansAgainWhenTheScannerWasRenumbered() {
+        QTemporaryDir dir;
+        Scanner scanner(renumberingScanimage(dir.path()));
+        FakePicker picker;
+        Backend backend(&scanner, &picker);
+        QTRY_VERIFY(backend.ready());
+        QCOMPARE(backend.devices().value(0).toMap().value("id").toString(), QString("airscan:e0:Fake Scanner"));
+
+        write(dir.filePath("listings"), "2\n"); // the network now calls it e1
+        backend.scan();
+        QTRY_COMPARE(backend.pages()->count(), 1);
+        QTRY_VERIFY(backend.ready());
+        QVERIFY2(backend.error().isEmpty(), qPrintable(backend.error()));
+        QCOMPARE(backend.devices().value(0).toMap().value("id").toString(), QString("airscan:e2:Fake Scanner"));
     }
 
     void backendSaysWhenScanimageIsMissing() {

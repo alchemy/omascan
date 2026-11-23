@@ -56,6 +56,12 @@ struct Settings {
 QList<Device> parseDevices(const QString &listing);
 QString deviceListFormat();
 
+// The same scanner in a fresh list, or -1. airscan numbers its devices in the
+// order one discovery happens to find them ("airscan:e1:Name"), so an id kept
+// from an earlier discovery may no longer open; the scanner is then found by
+// the name in its id, else by its shown name.
+int findDevice(const QList<Device> &devices, const QString &id, const QString &name = {});
+
 // Parses `scanimage -d <device> -A`.
 Options parseOptions(const QString &help);
 
@@ -75,6 +81,10 @@ double parseProgress(const QString &text);
 
 // The last real error scanimage printed, without its "scanimage: " prefix.
 QString errorMessage(const QString &stderrText);
+
+// Whether an errorMessage() says the device could not be opened, as happens
+// to an airscan id that a newer discovery has numbered differently.
+bool isOpenFailure(const QString &message);
 
 } // namespace ScanImage
 

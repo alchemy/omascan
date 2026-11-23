@@ -13,6 +13,7 @@
   "Could not listen for the portal file picker response.": "Impossibile ricevere la risposta del selettore di file.",
   "Could not read scanned page %1.": "Impossibile leggere la pagina scansionata %1.",
   "Could not read the settings of %1: %2": "Impossibile leggere le impostazioni di %1: %2",
+  "%1 is no longer on the network.": "%1 non è più raggiungibile in rete.",
   "Could not run scanimage.": "Impossibile avviare scanimage.",
   "Could not start the PDF.": "Impossibile creare il PDF.",
   "Could not write %1: %2": "Impossibile scrivere %1: %2",

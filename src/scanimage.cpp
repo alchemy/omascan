@@ -124,6 +124,25 @@ QList<Device> parseDevices(const QString &listing) {
     return devices;
 }
 
+int findDevice(const QList<Device> &devices, const QString &id, const QString &name) {
+    auto find = [&devices](auto matches) {
+        for (int i = 0; i < devices.size(); ++i)
+            if (matches(devices[i]))
+                return i;
+        return -1;
+    };
+    if (id.isEmpty() && name.isEmpty())
+        return -1;
+    int index = find([&](const Device &d) { return !id.isEmpty() && d.id == id; });
+    if (index < 0 && id.startsWith("airscan:")) {
+        const QString airscanName = id.section(':', 2);
+        index = find([&](const Device &d) { return d.id.startsWith("airscan:") && d.id.section(':', 2) == airscanName; });
+    }
+    if (index < 0 && !name.isEmpty())
+        index = find([&](const Device &d) { return d.name == name; });
+    return index;
+}
+
 Options parseOptions(const QString &help) {
     Options options;
     static const QRegularExpression line(R"(^\s+(--[\w-]+|-[a-z])\s+(.+?)\s+\[([^\]]*)\]\s*$)");
@@ -232,6 +251,10 @@ QString errorMessage(const QString &stderrText) {
         last = line;
     }
     return last;
+}
+
+bool isOpenFailure(const QString &message) {
+    return message.startsWith("open of device");
 }
 
 } // namespace ScanImage

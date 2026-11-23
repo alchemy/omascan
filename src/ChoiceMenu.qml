@@ -41,24 +41,17 @@ Popup {
     }
 
     // The widest option, so the menu fits its labels.
-    TextMetrics {
-        id: measureText
-        font.pixelSize: 13
-    }
+    FontMetrics { id: labelMetrics; font.pixelSize: 13 }
+    FontMetrics { id: detailMetrics; font.pixelSize: 11 }
     readonly property var measure: {
         let width = 0;
         for (const option of options) {
-            measureText.text = option.label + (option.key ? "   " + option.key : "");
-            width = Math.max(width, measureText.advanceWidth);
-            if (option.detail) {
-                measureText.text = option.detail;
-                width = Math.max(width, measureText.advanceWidth);
-            }
+            width = Math.max(width, labelMetrics.advanceWidth(option.label + (option.key ? "   " + option.key : "")));
+            if (option.detail)
+                width = Math.max(width, detailMetrics.advanceWidth(option.detail));
         }
-        if (footer !== "") {
-            measureText.text = footer + "   " + footerKey;
-            width = Math.max(width, measureText.advanceWidth);
-        }
+        if (footer !== "")
+            width = Math.max(width, labelMetrics.advanceWidth(footer + "   " + footerKey));
         return { width: width + 64 };
     }
 

@@ -100,6 +100,7 @@ signals:
 
 private:
     void setError(const QString &error);
+    void startScan();
     void applyOptions(const ScanImage::Options &options);
     void save();
     void updateDirty();
@@ -123,5 +124,7 @@ private:
     double m_progress = 0;
     int m_scannedPages = 0;
     int m_run = 0;
+    bool m_retried = false;         // this scan has already been tried again
+    QString m_retryScanner;         // scan again once this scanner is found anew
     QString m_error;
 };

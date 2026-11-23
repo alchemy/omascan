@@ -111,8 +111,10 @@ int devices(const QStringList &arguments) {
 
 // The scanner named on the command line, else the one the window used last,
 // else the first one found. Commands read the window's memory, never write it.
+// An airscan id is numbered by the discovery that found it, so it is looked
+// up again by its name, as the id the scanner has now.
 bool chooseDevice(Scanner &scanner, const QString &requested, QString *device, QString *error) {
-    if (!requested.isEmpty()) {
+    if (!requested.isEmpty() && !requested.startsWith("airscan:")) {
         *device = requested;
         return true;
     }
@@ -122,11 +124,18 @@ bool chooseDevice(Scanner &scanner, const QString &requested, QString *device, Q
             *error = "No scanners found.";
         return false;
     }
-    const QString saved = QSettings("omascan", "omascan").value("device").toString();
-    *device = found.first().id;
-    for (const auto &candidate : found)
-        if (candidate.id == saved)
-            *device = saved;
+    if (!requested.isEmpty()) {
+        const int index = ScanImage::findDevice(found, requested);
+        if (index < 0) {
+            *error = QString("No scanner %1 found.").arg(requested);
+            return false;
+        }
+        *device = found[index].id;
+        return true;
+    }
+    const QSettings saved("omascan", "omascan");
+    const int index = ScanImage::findDevice(found, saved.value("device").toString(), saved.value("deviceName").toString());
+    *device = found[index < 0 ? 0 : index].id;
     return true;
 }
 
