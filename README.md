@@ -2,7 +2,7 @@
 
 Scan paper to PDF from a SANE scanner, on Omarchy.
 
-![Omascan with three scanned pages](docs/screenshot.png)
+![Scanning two pages from the feeder, turning one, and exporting the PDF](docs/demo.webp)
 
 Pick the scanner, press Space, and the pages appear as they come off the
 glass or out of the feeder. Turn, reorder or drop them, then export one PDF.
@@ -13,6 +13,8 @@ It drives SANE's `scanimage` rather than linking SANE, so a misbehaving
 scanner driver can only end its own scan, never the app. Driverless network
 scanners (eSCL/AirScan, which most scanners from the last several years
 speak) work through `sane-airscan` with no vendor driver.
+
+![A page scanned on the Epson WF-C5710's flatbed](docs/screenshot.png)
 
 ## Install
 
