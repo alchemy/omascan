@@ -52,8 +52,29 @@ QList<int> parseResolutions(const QString &values) {
 
 } // namespace
 
+namespace {
+// Starts every device on a line of its own, behind a marker. Some backends
+// print to standard output while they probe the network (epson2 has been
+// seen dumping a printer's whole web page, with no newline at the end), so
+// only marked lines are devices.
+const QString deviceMarker = QStringLiteral("omascan-device|");
+}
+
 QString deviceListFormat() {
-    return "%d|%v|%m|%t%n";
+    return "%n" + deviceMarker + "%d|%v|%m|%t%n";
+}
+
+static bool isScanner(const QString &backend, const QString &type) {
+    // Webcams and cameras answer as SANE devices too: v4l lists webcams as
+    // "virtual device", gphoto2 cameras as "still camera". The test backend
+    // is virtual as well, but it is a scanner, if a pretend one.
+    static const QStringList cameraBackends{"v4l", "gphoto2", "dc210", "dc240", "dc25", "dmc", "qcam", "stv680"};
+    if (cameraBackends.contains(backend))
+        return false;
+    static const QRegularExpression camera(R"(camera|video|webcam)", QRegularExpression::CaseInsensitiveOption);
+    if (camera.match(type).hasMatch())
+        return false;
+    return backend == "test" || type.compare("virtual device", Qt::CaseInsensitive) != 0;
 }
 
 QList<Device> parseDevices(const QString &listing) {
@@ -63,13 +84,15 @@ QList<Device> parseDevices(const QString &listing) {
     };
     QList<Entry> entries;
     for (const QString &line : listing.split('\n', Qt::SkipEmptyParts)) {
-        const QStringList fields = line.trimmed().split('|');
+        const QString text = line.trimmed();
+        if (!text.startsWith(deviceMarker))
+            continue;
+        const QStringList fields = text.mid(deviceMarker.size()).split('|');
         if (fields.size() < 4 || fields[0].isEmpty())
             continue;
         const QString id = fields[0], vendor = fields[1], model = fields[2], type = fields.mid(3).join('|');
         const QString backend = id.section(':', 0, 0);
-        // Webcams answer as SANE devices through v4l, but they are not scanners.
-        if (backend == "v4l")
+        if (!isScanner(backend, type))
             continue;
 
         Device device{id, {}, {}};

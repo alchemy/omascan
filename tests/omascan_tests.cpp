@@ -18,14 +18,24 @@
 
 namespace {
 
-// Captured from `scanimage -f '%d|%v|%m|%t%n'` on a network with two Brother
-// MFC-J6955DW printers and a laptop webcam.
+// Captured from `scanimage -f` with ScanImage::deviceListFormat() on a
+// network with two Brother MFC-J6955DW printers, an Epson WF-C5710 and a
+// laptop webcam. While probing, a backend printed the Epson's web page to
+// standard output with no newline at its end; without the marker the webcam
+// was glued to the page's last line and slipped through as a scanner.
 const char *realListing =
-    "v4l:/dev/video0|Noname|Laptop Webcam Module (2nd Gen):|virtual device\n"
-    "escl:http://192.168.2.31:80|Brother|MFC-J6955DW [94ddf8163b05]|platen,adf scanner\n"
-    "escl:http://192.168.2.36:80|Brother|MFC-J6955DW|platen,adf scanner\n"
-    "airscan:e0:Brother MFC-J6955DW|eSCL|Brother MFC-J6955DW|ip=192.168.2.36\n"
-    "airscan:e1:Brother MFC-J6955DW [94ddf8163b05]|eSCL|Brother MFC-J6955DW [94ddf8163b05]|ip=192.168.2.31\n";
+    "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN \"\r\n"
+    "<script type=\"text/javascript\">\r\n"
+    "if (a || b) { document.write(\"x|y|z|w\"); }\r\n"
+    "</script>\r\n"
+    "<body><noscript>Abilitare l'impostazione JavaScript del browser.</noscript></body></HTML>"
+    "\nomascan-device|v4l:/dev/video0|Noname|Laptop Webcam Module (2nd Gen):|virtual device\n"
+    "\nomascan-device|escl:http://192.168.2.31:80|Brother|MFC-J6955DW [94ddf8163b05]|platen,adf scanner\n"
+    "\nomascan-device|escl:http://192.168.2.36:80|Brother|MFC-J6955DW|platen,adf scanner\n"
+    "\nomascan-device|escl:https://192.168.2.32:443|Epson|WF-C5710 Segreteria|platen,adf scanner\n"
+    "\nomascan-device|airscan:e0:Brother MFC-J6955DW|eSCL|Brother MFC-J6955DW|ip=192.168.2.36\n"
+    "\nomascan-device|airscan:e1:Brother MFC-J6955DW [94ddf8163b05]|eSCL|Brother MFC-J6955DW [94ddf8163b05]|ip=192.168.2.31\n"
+    "\nomascan-device|airscan:e2:EPSON WF-C5710 Segreteria|eSCL|EPSON WF-C5710 Segreteria|ip=192.168.2.32\n";
 
 // Captured from `scanimage -d airscan:e1:... -A` for the Brother.
 const char *brotherHelp = R"(
@@ -102,7 +112,8 @@ QString fakeScanimage(const QString &directory, bool emptyFeeder = false) {
     const QString script = directory + "/scanimage";
     QByteArray body = "#!/bin/sh\n"
                       "case \"$*\" in\n"
-                      "  *'-f '*) printf '%s\\n' 'v4l:/dev/video0|Noname|Cam|virtual device' "
+                      "  *'-f '*) printf '<html>a|b|c|d</html>'; "
+                      "printf '\\nomascan-device|%s\\n' 'v4l:/dev/video0|Noname|Cam|virtual device' "
                       "'airscan:e0:Fake Scanner|eSCL|Fake Scanner|ip=10.0.0.2'; exit 0 ;;\n"
                       "  *' -A'*) cat '" + directory.toUtf8() + "/help.txt'; exit 0 ;;\n"
                       "esac\n"
@@ -143,18 +154,34 @@ private slots:
         QStandardPaths::setTestModeEnabled(true);
     }
 
-    void devicesDropWebcamsAndDuplicates() {
+    void devicesDropWebcamsJunkAndDuplicates() {
         const auto devices = ScanImage::parseDevices(realListing);
-        QCOMPARE(devices.size(), 2);
+        QCOMPARE(devices.size(), 3);
         QCOMPARE(devices[0].id, QString("airscan:e0:Brother MFC-J6955DW"));
         QCOMPARE(devices[0].name, QString("Brother MFC-J6955DW"));
         QCOMPARE(devices[0].address, QString("192.168.2.36"));
         QCOMPARE(devices[1].address, QString("192.168.2.31"));
+        QCOMPARE(devices[2].name, QString("EPSON WF-C5710 Segreteria"));
+    }
+
+    void devicesDropCamerasOfEveryKind() {
+        const QString m = "omascan-device|";
+        const auto devices = ScanImage::parseDevices(
+            m + "net:10.0.0.5:v4l:/dev/video0|Noname|Webcam|virtual device\n" +
+            m + "gphoto2:usb:001,004|Canon|EOS 80D|still camera\n" +
+            m + "pnm:0|Noname|PNM file reader|virtual device\n" +
+            m + "dmc:/dev/usbscanner0|Polaroid|DMC|video camera\n" +
+            m + "test:0|Noname|frontend-tester|virtual device\n" +
+            m + "epson2:net:10.0.0.7|Epson|PID 08D1|flatbed scanner\n" +
+            "epson2:net:10.0.0.8|Epson|unmarked|flatbed scanner\n");
+        QCOMPARE(devices.size(), 2);
+        QCOMPARE(devices[0].id, QString("test:0"));
+        QCOMPARE(devices[1].id, QString("epson2:net:10.0.0.7"));
     }
 
     void devicesKeepEsclWithoutAirscan() {
-        const auto devices = ScanImage::parseDevices("escl:http://10.0.0.9:80|Canon|TR4700 series|platen scanner\n"
-                                                     "pixma:04A91234|CANON|Canon PIXMA TR4700|multi-function peripheral\n");
+        const auto devices = ScanImage::parseDevices("omascan-device|escl:http://10.0.0.9:80|Canon|TR4700 series|platen scanner\n"
+                                                     "omascan-device|pixma:04A91234|CANON|Canon PIXMA TR4700|multi-function peripheral\n");
         QCOMPARE(devices.size(), 2);
         QCOMPARE(devices[0].name, QString("Canon TR4700 series"));
         QCOMPARE(devices[0].address, QString("10.0.0.9"));

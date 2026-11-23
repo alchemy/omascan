@@ -49,8 +49,10 @@ struct Settings {
     QString page;
 };
 
-// Parses `scanimage -f '%d|%v|%m|%t%n'`. Webcams are dropped, and a scanner
-// that both the escl and airscan backends found is listed once, as airscan.
+// Parses `scanimage -f` with deviceListFormat(): only lines carrying its
+// marker are read, so whatever else a backend prints is ignored. Webcams and
+// cameras are dropped, and a scanner that both the escl and airscan backends
+// found is listed once, as airscan.
 QList<Device> parseDevices(const QString &listing);
 QString deviceListFormat();
 

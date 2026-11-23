@@ -16,12 +16,17 @@ speak) work through `sane-airscan` with no vendor driver.
 
 ## Install
 
+Omascan is in the [AUR](https://aur.archlinux.org/packages/omascan):
+
 ```sh
-omarchy-pkg-add sane sane-airscan   # ipp-usb too, for USB scanners
-bin/install
+omarchy-pkg-aur-add omascan   # or: yay -S omascan
 ```
 
+It brings SANE and `sane-airscan` with it, which is all a network scanner
+needs. For a scanner on USB, add `ipp-usb` too (`omarchy-pkg-add ipp-usb`).
 Omascan then appears in the app launcher (`Super + Space`).
+
+To install from this checkout instead, run `bin/install`.
 
 ## Keys
 

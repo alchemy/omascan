@@ -75,7 +75,7 @@ Backend::Backend(Scanner *scanner, FilePicker *picker, QObject *parent)
         ++m_scannedPages;
         m_progress = 0;
         emit progressChanged();
-        m_pages.append(Page{path, 0, m_settings.resolution, {}});
+        m_pages.append(Page{path, 0, m_settings.resolution});
         emit pageAdded(m_pages.count() - 1);
     });
     connect(m_scanner, &Scanner::progress, this, [this](double percent) {

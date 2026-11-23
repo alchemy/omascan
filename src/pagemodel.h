@@ -8,6 +8,11 @@
 // One scanned page: the PNG scanimage wrote, which is never changed, and the
 // turn to apply when the document is exported.
 struct Page {
+    // Spelled out so Page{path, rotation, dpi} leaves the size to be read
+    // from the file, without a missing-initializer warning at every call.
+    Page(const QString &path = {}, int rotation = 0, int dpi = 0, QSizeF size = {})
+        : path(path), rotation(rotation), dpi(dpi), size(size) {}
+
     QString path;
     int rotation = 0; // clockwise degrees: 0, 90, 180 or 270
     int dpi = 0;
