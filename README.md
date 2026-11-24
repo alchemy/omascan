@@ -51,8 +51,8 @@ so it can join this list.
 | `Esc` | Cancel the scan |
 | `Ctrl+S` | Export PDF |
 | `Ctrl+N` | New document |
-| `←` `→` or `PgUp` `PgDn` / `Home` `End` | Previous or next page / first or last |
-| `Shift+←` `Shift+→` | Move the page |
+| `↑` `↓` or `PgUp` `PgDn` / `Home` `End` | Previous or next page / first or last |
+| `Shift+↑` `Shift+↓` | Move the page |
 | `R` / `Shift+R` | Rotate right / left |
 | `Delete` or `X` | Delete the page |
 | `Ctrl+Z` / `Ctrl+Shift+Z` | Undo / redo |

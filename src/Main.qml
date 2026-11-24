@@ -178,12 +178,14 @@ ApplicationWindow {
     Shortcut { sequences: [StandardKey.New]; context: Qt.ApplicationShortcut; enabled: !win.blocked; onActivated: win.newDocument() }
     Shortcut { sequences: [StandardKey.Undo]; context: Qt.ApplicationShortcut; enabled: !win.blocked && !backend.scanning; onActivated: backend.pages.undo() }
     Shortcut { sequences: [StandardKey.Redo, "Ctrl+Shift+Z"]; context: Qt.ApplicationShortcut; enabled: !win.blocked && !backend.scanning; onActivated: backend.pages.redo() }
-    Shortcut { sequences: ["Left", "PgUp"]; context: Qt.ApplicationShortcut; enabled: !win.blocked; onActivated: win.select(win.current - 1) }
-    Shortcut { sequences: ["Right", "PgDown"]; context: Qt.ApplicationShortcut; enabled: !win.blocked; onActivated: win.select(win.current + 1) }
+    // The pages run top to bottom, so up and down go through them; left and
+    // right still work, as they did before the pages were stacked.
+    Shortcut { sequences: ["Up", "PgUp", "Left"]; context: Qt.ApplicationShortcut; enabled: !win.blocked; onActivated: win.select(win.current - 1) }
+    Shortcut { sequences: ["Down", "PgDown", "Right"]; context: Qt.ApplicationShortcut; enabled: !win.blocked; onActivated: win.select(win.current + 1) }
     Shortcut { sequence: "Home"; context: Qt.ApplicationShortcut; enabled: !win.blocked; onActivated: win.select(0) }
     Shortcut { sequence: "End"; context: Qt.ApplicationShortcut; enabled: !win.blocked; onActivated: win.select(win.count - 1) }
-    Shortcut { sequence: "Shift+Left"; context: Qt.ApplicationShortcut; enabled: win.canEdit; onActivated: win.movePage(-1) }
-    Shortcut { sequence: "Shift+Right"; context: Qt.ApplicationShortcut; enabled: win.canEdit; onActivated: win.movePage(1) }
+    Shortcut { sequences: ["Shift+Up", "Shift+Left"]; context: Qt.ApplicationShortcut; enabled: win.canEdit; onActivated: win.movePage(-1) }
+    Shortcut { sequences: ["Shift+Down", "Shift+Right"]; context: Qt.ApplicationShortcut; enabled: win.canEdit; onActivated: win.movePage(1) }
     Shortcut { sequence: "R"; context: Qt.ApplicationShortcut; enabled: !win.blocked; onActivated: win.rotate(90) }
     Shortcut { sequence: "Shift+R"; context: Qt.ApplicationShortcut; enabled: !win.blocked; onActivated: win.rotate(-90) }
     Shortcut { sequences: ["Delete", "Backspace", "X"]; context: Qt.ApplicationShortcut; enabled: win.canEdit; onActivated: win.removePage() }
@@ -546,8 +548,8 @@ ApplicationWindow {
             options: [
                 { value: "right", label: qsTr("Rotate right"), key: "R" },
                 { value: "left", label: qsTr("Rotate left"), key: "Shift+R" },
-                { value: "earlier", label: qsTr("Move earlier"), key: "Shift+←" },
-                { value: "later", label: qsTr("Move later"), key: "Shift+→" },
+                { value: "earlier", label: qsTr("Move earlier"), key: "Shift+↑" },
+                { value: "later", label: qsTr("Move later"), key: "Shift+↓" },
                 { value: "delete", label: qsTr("Delete page"), key: "Delete" }
             ]
             function popup() {
@@ -705,7 +707,7 @@ ApplicationWindow {
                     if (backend.loadingOptions)
                         return qsTr("Reading scanner settings…");
                     if (win.count > 0)
-                        return qsTr("R to rotate · Shift+← → to move · Delete to remove · right-click for more");
+                        return qsTr("R to rotate · Shift+↑ ↓ to move · Delete to remove · right-click for more");
                     return "";
                 }
                 color: failed ? "#ff8a80" : win.notice !== "" && !backend.scanning ? win.accent : "#8e8e93"
@@ -759,13 +761,13 @@ ApplicationWindow {
                         model: [
                             ["Space", qsTr("Scan"), "Ctrl+S", qsTr("Export PDF")],
                             ["Esc", qsTr("Cancel the scan"), "Ctrl+N", qsTr("New document")],
-                            ["S", qsTr("Next source"), "← / →", qsTr("Previous / next page")],
+                            ["S", qsTr("Next source"), "↑ / ↓", qsTr("Previous / next page")],
                             ["M", qsTr("Next color mode"), "Home / End", qsTr("First / last page")],
                             ["D / Shift+D", qsTr("Higher / lower resolution"), "Ctrl+= / − / 0", qsTr("Zoom in / out / fit")],
                             ["P", qsTr("Next paper size"), "Ctrl+Z", qsTr("Undo")],
                             ["F5", qsTr("Find scanners again"), "Ctrl+Shift+Z", qsTr("Redo")],
                             ["R / Shift+R", qsTr("Rotate right / left"), "Q", qsTr("Quit")],
-                            ["Shift+← / →", qsTr("Move the page"), "?", qsTr("This list")],
+                            ["Shift+↑ / ↓", qsTr("Move the page"), "?", qsTr("This list")],
                             ["Delete", qsTr("Delete the page"), "", ""]
                         ]
                         delegate: Repeater {
