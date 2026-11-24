@@ -30,18 +30,37 @@ Omascan then appears in the app launcher (`Super + Space`).
 
 To install from this checkout instead, run `bin/install`.
 
-## Tested scanners
+## Scanners
 
-| Scanner | Connection |
-|---|---|
-| Brother MFC-J6955DW | Network (eSCL) |
-| Canon PIXMA TR4755i | Network (eSCL) |
-| Epson WF-C5710 | Network (eSCL) |
+Omascan doesn't talk to scanners itself: SANE does. Omascan lists what SANE
+finds, offers the sources, modes, resolutions and paper sizes the scanner's
+SANE driver reports, runs the scan through `scanimage`, and builds the PDF.
+Finding the scanner, speaking its protocol and the quality of the image are
+up to SANE and its driver for that scanner, which for most network scanners
+is `sane-airscan`.
 
-Most scanners that speak eSCL/AirScan should work the same way. If you try
-Omascan with another one, whether it works or not, please
-[report it](https://github.com/alchemy/omascan/issues/new?template=scanner-report.yml)
-so it can join this list.
+So the quickest way to tell where a problem lies is to try `scanimage` alone:
+
+```sh
+scanimage -L                                # is the scanner listed?
+scanimage -d '<id from the list>' -o test.png  # does a scan work?
+```
+
+If either fails, the problem is in SANE or its driver, and is best reported
+there ([sane-airscan](https://github.com/alexpevzner/sane-airscan/issues) for
+most network scanners). If `scanimage` works and Omascan doesn't, that's ours:
+please [report it](https://github.com/alchemy/omascan/issues/new?template=scanner-report.yml).
+
+Tested so far, each with the SANE driver named:
+
+| Scanner | Connection | SANE driver |
+|---|---|---|
+| Brother MFC-J6955DW | Network (eSCL) | sane-airscan |
+| Canon PIXMA TR4755i | Network (eSCL) | sane-airscan |
+| Epson WF-C5710 | Network (eSCL) | sane-airscan |
+
+Other scanners that work with SANE should work in Omascan too. Reports of
+what you tried, working or not, help grow this list.
 
 ## Keys
 
