@@ -1,5 +1,5 @@
 pkgname=omascan
-pkgver=0.1.2
+pkgver=0.1.3
 pkgrel=1
 pkgdesc='Scan paper to PDF from a SANE scanner'
 arch=('x86_64' 'aarch64')

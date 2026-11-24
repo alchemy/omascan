@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
     app.setApplicationName("omascan");
     app.setOrganizationName("omascan");
-    app.setApplicationVersion("0.1.2");
+    app.setApplicationVersion("0.1.3");
 
     if (first == "--version" || first == "-v") {
         printf("omascan %s\n", qPrintable(app.applicationVersion()));
